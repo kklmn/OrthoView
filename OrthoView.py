@@ -82,7 +82,7 @@ isTest = True
 if not isTest:
     from taurus import Device as DeviceProxy
 #    from PyTango import DeviceProxy
-    motorX = DeviceProxy('mp_x')
+    motorX = None  # DeviceProxy('mp_x')
     motorY = DeviceProxy('mp_y')
 
 selfDir = os.path.dirname(__file__)
@@ -179,10 +179,10 @@ class MyMplCanvas(mpl_qt.FigureCanvasQTAgg):
     def imshow(self, img):
         if self.img is None:
             self.img = self.axes.imshow(img)
-            self.img.set_extent(
-                [-0.5, img.shape[1]-0.5, img.shape[0]-0.5, -0.5])
         else:
             self.img.set_data(img)
+            self.img.set_extent(
+                [-0.5, img.shape[1]-0.5, img.shape[0]-0.5, -0.5])
         self.draw()
 
     def onPress(self, event):
@@ -237,8 +237,17 @@ class MyMplCanvas(mpl_qt.FigureCanvasQTAgg):
             print(-x0, y0)
         else:
             if motorX is not None:
-                curX = motorX.read_attribute('position').value
-                motorX.write_attribute('position', curX-x0)
+                try:
+                    curX = motorX.read_attribute('position').value
+                    motorX.write_attribute('position', curX-x0)
+                except Exception as e:
+                    lines = str(e).splitlines()
+                    for line in reversed(lines):
+                        if 'desc =' in line:
+                            msgBox = qt.QMessageBox()
+                            msgBox.critical(
+                                self, 'Motion has failed', line.strip()[7:])
+                            return
             if motorY is not None:
                 curY = motorY.read_attribute('position').value
                 motorY.write_attribute('position', curY+y0)
@@ -502,16 +511,37 @@ class OrthoView(qt.QWidget):
 
     def getFrame(self):
         if isTest:
-            frame = cv2.imread(r"_images/sample-holder-test.png")
+#            frame = cv2.imread(r"_images/sample-holder-test.png")
             # OpenCV uses BGR as its default colour order for images
-            self.img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#            self.img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            import pickle
+            with open(r"_images/sample-holder-test2.pickle", 'rb') as f:
+                try:
+                    packed = pickle.load(f, encoding='latin1')
+                except TypeError:
+                    packed = pickle.load(f)
+            unpacked = np.empty(list(packed.shape)+[3], dtype=np.uint8)
+            unpacked[:, :, 0] = (packed >> 16) & 0xff
+            unpacked[:, :, 1] = (packed >> 8) & 0xff
+            unpacked[:, :, 2] = packed & 0xff
+            # OpenCV uses BGR as its default colour order for images
+            self.img = cv2.cvtColor(unpacked, cv2.COLOR_BGR2RGB)
+
         else:
             frame = self.camera.read_attribute('Image').value
-            # convert from array (tango value) to opencv image
-            self.img = cv2.normalize(
-                src=frame, dst=None, alpha=0, beta=255,
-                norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-            self.img = cv2.cvtColor(self.img, cv2.COLOR_GRAY2BGR)
+
+            # for bw frames:
+#            self.img = cv2.normalize(
+#                src=frame, dst=None, alpha=0, beta=255,
+#                norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+#            self.img = cv2.cvtColor(self.img, cv2.COLOR_GRAY2BGR)
+
+            # for color frames:
+            unpacked = np.empty(list(frame.shape)+[3], dtype=np.uint8)
+            unpacked[:, :, 0] = (frame >> 16) & 0xff
+            unpacked[:, :, 1] = (frame >> 8) & 0xff
+            unpacked[:, :, 2] = frame & 0xff
+            self.img = cv2.cvtColor(unpacked, cv2.COLOR_BGR2RGB)
 
     def updateFrame(self):
         self.getFrame()
@@ -526,6 +556,7 @@ class OrthoView(qt.QWidget):
                 self.img, self.perspectiveTransform2,
                 (self.boundingRect[2], self.boundingRect[3]))
             overlay = self.img.copy()
+            ps = self.img.shape[0] * 0.02
 
             # grid:
             grid = np.arange(-10, 10) * 10 * self.zoom
@@ -541,22 +572,26 @@ class OrthoView(qt.QWidget):
             # beam position mark:
             if self.plotCanvas.isBeamPositionVisible:
                 cv2.circle(
-                    overlay, tuple(int(p) for p in self.beamPosRectified), 10,
-                    self.beamMarkColor, 3, CV_AA)  # cv2.LINE_AA or cv2.CV_AA
+                    overlay, tuple(int(p) for p in self.beamPosRectified),
+                    int(ps*0.75), self.beamMarkColor, int(ps/3.), CV_AA)
 
             # rectangle corners:
             if self.plotCanvas.isRectVisible:
                 for corner in self.targetRect:
-                    cv2.circle(overlay, corner, 5, self.cornerColor, -1)
+                    cv2.circle(overlay, corner, int(ps/3.), self.cornerColor,
+                               -1, CV_AA)
 
         else:
             overlay = self.img.copy()
+            ps = self.img.shape[0] * 0.02
 
             # beam position mark + text:
             if self.plotCanvas.isBeamPositionVisible:
                 beamPos = tuple(self.plotCanvas.beamPos)
 #                beamMarkTextPos = (beamPos[0]+10, beamPos[1]+20)
-                cv2.circle(overlay, beamPos, 6, self.beamMarkColor, 2, CV_AA)
+                cv2.circle(
+                    overlay, beamPos,
+                    int(ps), self.beamMarkColor, int(ps/3.), CV_AA)
                 # cv2.putText(
                 #     overlay, 'beam', beamMarkTextPos,
                 #     cv2.FONT_HERSHEY_SIMPLEX, 0.75, self.beamMarkColor, 1)
@@ -570,7 +605,7 @@ class OrthoView(qt.QWidget):
                     if self.buttonBaseRect.isChecked():
                         if icorner == self.buttonBaseRect.currentDefCorner:
                             color = self.currentCornerColor
-                    cv2.circle(overlay, corner, 3, color, -1, CV_AA)
+                    cv2.circle(overlay, corner, int(ps/3.), color, -1, CV_AA)
 
         alpha = 0.75  # transparency factor
         imageNew = cv2.addWeighted(overlay, alpha, self.img, 1-alpha, 0)
