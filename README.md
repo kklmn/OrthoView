@@ -4,7 +4,7 @@ OrthoView
 OrthoView is a Qt widget for viewing a scene with a camera and converting the
 image coordinates to orthogonal coordinates in a selected target plane. These
 coordinates can later be used for commanding a shift of the plane by its local
-XY movements. This can be used to visually select a sample in a sample plate.
+XY movements. The widget is used to visually select a sample in a sample plate.
 
 <p align="center">
   <img src="_images/OrthoView_ani.gif " width=600 />
@@ -13,7 +13,7 @@ XY movements. This can be used to visually select a sample in a sample plate.
 Dependencies
 ------------
 
-cv2 (opencv-python), optionally taurus.
+matplotlib, cv2 (opencv-python), optionally taurus.
 
 How to use
 ----------
