@@ -7,7 +7,7 @@ coordinates can later be used for commanding a shift of the plane by its local
 XY movements. This can be used to visually select a sample in a sample plate.
 
 <p align="center">
-  <img src="_images/OrthoView_ani.gif " width=802 />
+  <img src="_images/OrthoView_ani.gif " width=600 />
 </p>
 
 Dependencies
