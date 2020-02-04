@@ -6,7 +6,7 @@ OrthoView
 OrthoView is a Qt widget for viewing a scene with a camera and converting the
 image coordinates to orthogonal coordinates in a selected target plane. These
 coordinates can later be used for commanding a shift of the plane by its local
-XY movements. This can be used to visually select a sample in a sample plate.
+XY movements. The widget is used to visually select a sample in a sample plate.
 
 .. image:: _images/OrthoView_ani.gif
    :scale: 66 %
@@ -14,7 +14,7 @@ XY movements. This can be used to visually select a sample in a sample plate.
 Dependencies
 ------------
 
-cv2 (opencv-python), optionally taurus.
+matplotlib, cv2 (opencv-python), optionally taurus.
 
 How to use
 ----------
@@ -141,8 +141,6 @@ class MyMplCanvas(mpl_qt.FigureCanvasQTAgg):
         super(MyMplCanvas, self).__init__(self.fig)
         self.setParent(parent)
         self.updateGeometry()
-        fm = qt.QFontMetrics(self.font())
-        self.fontsize = int(fm.height()) / 1.5
         self.setupPlot()
         self.mpl_connect('button_press_event', self.onPress)
         self.img = None
@@ -181,9 +179,10 @@ class MyMplCanvas(mpl_qt.FigureCanvasQTAgg):
     def imshow(self, img):
         if self.img is None:
             self.img = self.axes.imshow(img)
+            self.img.set_extent(
+                [-0.5, img.shape[1]-0.5, img.shape[0]-0.5, -0.5])
         else:
             self.img.set_data(img)
-        self.img.set_extent([-0.5, img.shape[1]-0.5, img.shape[0]-0.5, -0.5])
         self.draw()
 
     def onPress(self, event):
