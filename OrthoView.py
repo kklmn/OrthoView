@@ -183,12 +183,14 @@ class MyMplCanvas(mpl_qt.FigureCanvasQTAgg):
         if self.img is None:
             self.img = self.axes.imshow(img)
         else:
-            self.img.set_data(img)
-            self.img.set_extent(
-                [-0.5, img.shape[1]-0.5, img.shape[0]-0.5, -0.5])
-            self.axes.set_xlim((0, img.shape[1]))
-            self.axes.set_ylim((img.shape[0], 0))
-            self.toolbar.update()
+            prev = self.img.get_array()
+            if prev.shape != img.shape:
+                self.img.set_data(img)
+                self.img.set_extent(
+                    [-0.5, img.shape[1]-0.5, img.shape[0]-0.5, -0.5])
+                self.axes.set_xlim((0, img.shape[1]))
+                self.axes.set_ylim((img.shape[0], 0))
+                self.toolbar.update()
         self.draw()
 
     def onPress(self, event):
