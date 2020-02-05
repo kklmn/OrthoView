@@ -19,12 +19,13 @@ matplotlib, cv2 (opencv-python), optionally taurus.
 How to use
 ----------
 
-With the Perspective Rectangle button (the 1st in the right group) define four
-points that form a rectangle in a plane. A blue dot on the button shows the
-expected corner to define. Set X and Y dimensions with the next two buttons.
-Define the local origin (beam position) by the right mouse click. Check the
-resulting image orthogonality in the expected plane by the last button. Also
-observe the mouse coordinates in the target plane, as displayed at the top.
+Run it: `python OrthoView.py`. With the Perspective Rectangle button (the 1st
+in the right group) define four points that form a rectangle in a plane. A blue
+dot on the button shows the currently expected corner to define. Set X and Y
+dimensions with the next two buttons. Define the local origin (beam position)
+by the right mouse click. Check the resulting image orthogonality in the
+expected plane by the last button. Also observe the mouse coordinates in the
+target plane, as displayed above the image.
 
 To use the motion functionality, set `isTest = False`, define your motions in
 the top part of the module and use them in the method `moveToBeam()`.
@@ -34,7 +35,7 @@ the top part of the module and use them in the method `moveToBeam()`.
 __author__ = "Konstantin Klementiev"
 __versioninfo__ = (1, 0, 0)
 __version__ = '.'.join(map(str, __versioninfo__))
-__date__ = "04 Feb 2020"
+__date__ = "05 Feb 2020"
 __license__ = "MIT license"
 
 import os
@@ -174,6 +175,8 @@ class MyMplCanvas(mpl_qt.FigureCanvasQTAgg):
         self.axes = self.fig.add_axes(rect)
         self.axes.xaxis.set_visible(False)
         self.axes.yaxis.set_visible(False)
+        for spine in ['left', 'right', 'bottom', 'top']:
+            self.axes.spines[spine].set_visible(False)
         self.axes.set_zorder(20)
 
     def imshow(self, img):
@@ -445,7 +448,7 @@ class OrthoView(qt.QWidget):
         super(OrthoView, self).__init__(parent)
 
         self.setWindowTitle('OrthoView')
-        self.setMinimumSize(800, 600+55)
+        self.setMinimumSize(800, 600+53)
 #        self.setFixedSize(640, 480)
         self.beamPosRectified = [0, 0]
 
@@ -511,26 +514,25 @@ class OrthoView(qt.QWidget):
 
     def getFrame(self):
         if isTest:
-#            frame = cv2.imread(r"_images/sample-holder-test.png")
+            frame = cv2.imread(r"_images/sample-holder-test.png")
             # OpenCV uses BGR as its default colour order for images
-#            self.img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            import pickle
-            with open(r"_images/sample-holder-test2.pickle", 'rb') as f:
-                try:
-                    packed = pickle.load(f, encoding='latin1')
-                except TypeError:
-                    packed = pickle.load(f)
-            unpacked = np.empty(list(packed.shape)+[3], dtype=np.uint8)
-            unpacked[:, :, 0] = (packed >> 16) & 0xff
-            unpacked[:, :, 1] = (packed >> 8) & 0xff
-            unpacked[:, :, 2] = packed & 0xff
-            # OpenCV uses BGR as its default colour order for images
-            self.img = cv2.cvtColor(unpacked, cv2.COLOR_BGR2RGB)
+            self.img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#            import pickle
+#            with open(r"_images/sample-holder-test2.pickle", 'rb') as f:
+#                try:
+#                    packed = pickle.load(f, encoding='latin1')
+#                except TypeError:
+#                    packed = pickle.load(f)
+#            unpacked = np.empty(list(packed.shape)+[3], dtype=np.uint8)
+#            unpacked[:, :, 2] = (packed >> 16) & 0xff
+#            unpacked[:, :, 1] = (packed >> 8) & 0xff
+#            unpacked[:, :, 0] = packed & 0xff
+#            self.img = unpacked
 
         else:
             frame = self.camera.read_attribute('Image').value
 
-            # for bw frames:
+            # for monochrome frames:
 #            self.img = cv2.normalize(
 #                src=frame, dst=None, alpha=0, beta=255,
 #                norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
@@ -538,10 +540,10 @@ class OrthoView(qt.QWidget):
 
             # for color frames:
             unpacked = np.empty(list(frame.shape)+[3], dtype=np.uint8)
-            unpacked[:, :, 0] = (frame >> 16) & 0xff
+            unpacked[:, :, 2] = (frame >> 16) & 0xff
             unpacked[:, :, 1] = (frame >> 8) & 0xff
-            unpacked[:, :, 2] = frame & 0xff
-            self.img = cv2.cvtColor(unpacked, cv2.COLOR_BGR2RGB)
+            unpacked[:, :, 0] = frame & 0xff
+            self.img = unpacked
 
     def updateFrame(self):
         self.getFrame()
