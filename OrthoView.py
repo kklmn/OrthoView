@@ -33,9 +33,9 @@ the top part of the module and use them in the method `moveToBeam()`.
 """
 
 __author__ = "Konstantin Klementiev"
-__versioninfo__ = (1, 0, 0)
+__versioninfo__ = (1, 0, 1)
 __version__ = '.'.join(map(str, __versioninfo__))
-__date__ = "05 Feb 2020"
+__date__ = "06 Feb 2020"
 __license__ = "MIT license"
 
 import os
@@ -85,6 +85,10 @@ if not isTest:
 #    from PyTango import DeviceProxy
     motorX = None  # DeviceProxy('mp_x')
     motorY = DeviceProxy('mp_y')
+    from taurus.qt.qtgui.display import TaurusLed
+    taurusLedModel = "b308a-eh/rpi/cam-01/status"
+else:
+    TaurusLed = None
 
 selfDir = os.path.dirname(__file__)
 iniApp = (os.path.join(selfDir, 'OrthoView.ini'))
@@ -184,8 +188,8 @@ class MyMplCanvas(mpl_qt.FigureCanvasQTAgg):
             self.img = self.axes.imshow(img)
         else:
             prev = self.img.get_array()
+            self.img.set_data(img)
             if prev.shape != img.shape:
-                self.img.set_data(img)
                 self.img.set_extent(
                     [-0.5, img.shape[1]-0.5, img.shape[0]-0.5, -0.5])
                 self.axes.set_xlim((0, img.shape[1]))
@@ -489,12 +493,17 @@ class OrthoView(qt.QWidget):
                     self.buttonStraightRect):
             but.setFixedSize(60, 40)
         layoutT.addWidget(self.toolbar)
+        if TaurusLed is not None:
+            led = TaurusLed()
+            led.setModel(taurusLedModel)
+            layoutT.addWidget(led)
         layoutT.addWidget(self.buttonBaseRect)
         layoutT.addWidget(self.buttonScaleX)
         layoutT.addWidget(self.editScaleX)
         layoutT.addWidget(self.buttonScaleY)
         layoutT.addWidget(self.editScaleY)
         layoutT.addWidget(self.buttonStraightRect)
+
         layout = qt.QVBoxLayout(self)
         layout.addLayout(layoutT)
         layout.addWidget(self.plotCanvas)
