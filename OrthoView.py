@@ -4,9 +4,10 @@ OrthoView
 =========
 
 OrthoView is a Qt widget for viewing a scene with a camera and converting the
-image coordinates to orthogonal coordinates in a selected target plane. These
-coordinates can later be used for commanding a shift of the plane by its local
-XY movements. The widget is used to visually select a sample in a sample plate.
+image coordinates to orthogonal coordinates in a selected target plane. After
+this conversion, any cursor position on the image can define a relative shift
+of the plane by its local XY movements. The widget is used to visually select
+a sample in a sample plate.
 
 .. image:: _images/OrthoView_ani.gif
    :scale: 66 %
@@ -33,9 +34,9 @@ the top part of the module and use them in the method `moveToBeam()`.
 """
 
 __author__ = "Konstantin Klementiev"
-__versioninfo__ = (1, 0, 1)
+__versioninfo__ = (1, 0, 2)
 __version__ = '.'.join(map(str, __versioninfo__))
-__date__ = "06 Feb 2020"
+__date__ = "8 Feb 2020"
 __license__ = "MIT license"
 
 import os
@@ -426,7 +427,7 @@ class ScaleEdit(qt.QDoubleSpinBox):
         self.name = name
         self.buddyButton = buddyButton
         self.setVisible(False)
-        self.setSuffix(" mm")
+        self.setSuffix("mm")
         self.setDecimals(1)
         self.setMaximum(1000)
         self.setValue(buddyButton.scale)
