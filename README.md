@@ -29,3 +29,5 @@ target plane, as displayed above the image.
 
 To use the motion functionality, set `isTest = False`, define your motions in
 the top part of the module and use them in the method `moveToBeam()`.
+
+An example of Tango device for a USB camera is also supplied: `USBCamera.py`.
